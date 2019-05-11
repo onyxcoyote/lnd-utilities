@@ -7,8 +7,8 @@
         * python3
         * bash    
     * run with:
-    ```
-    ./get_lowfee_nodes.sh
-    ```
+```
+./get_lowfee_nodes.sh
+```
     
     
