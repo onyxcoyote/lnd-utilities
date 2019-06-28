@@ -189,12 +189,13 @@ def main():
                     fee_rate=target_fee,
                     time_lock_delta=current_time_lock_delta,
                 )
-                response_policy_update_request = stub.UpdateChannelPolicy(request_policy_update_request)
                 
-                #STUB
-                #print(response_policy_update_request)
-                if(response_policy_update_request.fee_rate_milli_msat != target_fee):
-                    print('error updating!')
+                try:
+                    response_policy_update_request = stub.UpdateChannelPolicy(request_policy_update_request)
+                    print('fees updated')
+                except Exception as e:
+                    print(e)
+                    
 
 
 #print fee range, used for informational purposes or debugging only
