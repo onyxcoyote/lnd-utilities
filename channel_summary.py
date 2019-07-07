@@ -32,8 +32,7 @@ def printOneChannel(chan,chantype):
             my_commit_fee = chan.commit_fee
         else:
             my_commit_fee = 0
-    
-    if(chantype == 'pending'):
+    elif(chantype == 'pending'):
         pubkey = chan.channel.remote_node_pub
         channel = chan.channel
         chanid = 'PENDING'
@@ -45,6 +44,9 @@ def printOneChannel(chan,chantype):
             my_commit_fee = chan.commit_fee 
         else:
             my_commit_fee = 0 
+    else:
+        print('unknown chantype')
+        print(chantype)
     
     #get node alias
     request_nodeinfo = ln.NodeInfoRequest(
