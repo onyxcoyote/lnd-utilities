@@ -20,7 +20,7 @@ def main():
     
     #todo: show last 1000 events, check if offset is > 1000, and use index_offset = numevents-1000
     request = ln.ForwardingHistoryRequest(
-        start_time=0,
+        start_time=1500000000,
         end_time=1700000000,
         index_offset=0,
         num_max_events=1000,
