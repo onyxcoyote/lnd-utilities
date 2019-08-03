@@ -59,7 +59,7 @@ def printOneChannel(chan,chantype):
     local_pct = round(100*channel.local_balance/channel.capacity,1)
               
             
-    print('%35s' % node_alias.encode('ascii','ignore'), '%18s' % chanid, pubkey, 'active: ', '%5s' % chanactive, 'remotebal:', '%8s' % channel.remote_balance, '%9s' % (my_commit_fee+channel.local_balance), '%7s' % my_commit_fee, 'localbal:', '%9s' % channel.local_balance, '/', '%9s' % channel.capacity, ' = ',  '%5s' % str(local_pct),'%')
+    print('%35s' % node_alias.encode('ascii','replace'), '%18s' % chanid, pubkey, 'active: ', '%5s' % chanactive, 'remotebal:', '%8s' % channel.remote_balance, '%9s' % (my_commit_fee+channel.local_balance), '%7s' % my_commit_fee, 'localbal:', '%9s' % channel.local_balance, '/', '%9s' % channel.capacity, ' = ',  '%5s' % str(local_pct),'%')
 
     all_channel_val += (my_commit_fee+channel.local_balance)
     all_channel_cap += channel.capacity
