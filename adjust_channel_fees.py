@@ -6,6 +6,9 @@ import lnrpc_helper
 
 ##these values can be adjusted
 
+#configuration file location
+conf_file_name = "/srv/lnd_scripts/adjust_channel_fees.conf"
+
 #fee range (min fee threshold, max fee threshold)
 capacity_pct_lower_target_100=0
 capacity_pct_upper_target_100=90
@@ -31,7 +34,6 @@ dry_run=False #False=will change fee rate, True=prints ideal fees but does not a
 #init
 target_capacity_range_100 = capacity_pct_upper_target_100 - capacity_pct_lower_target_100
 stub = lnrpc_helper.get_lightning_stub()
-conf_file_name = "adjust_channel_fees.conf"
 multiplier_list = []
 
 
@@ -54,39 +56,61 @@ if(min_fee < 0.000001 and min_fee != 0):
 
 
 class MultiplierConfig(object):
-    chan_id = ""
-    multi_value = 0
+    config_type = "unknown"
+    chan_id = 0
+    pubkey = ""
+    multi_value = 1
     comment = ""
     
-    def __init__(self, chan_id, multi_value, comment):
-        self.chan_id = int(chan_id)
+    def __init__(self, chan_id_or_pubkey, multi_value, comment):
+        if chan_id_or_pubkey.startswith("03") or chan_id_or_pubkey.startswith("02"):
+            self.config_type = "pubkey"
+            self.chan_id = int(0)
+            self.pubkey = chan_id_or_pubkey
+        else:
+            self.config_type = "chan_id"
+            self.chan_id = int(chan_id_or_pubkey)
+            self.pubkey = ""
+            
         self.multi_value = float(multi_value)
         self.comment = comment
         
 def make_multiplier_config(line):
     
-    chan_id,multi_value,comment = line.split(",")
-    chan_id = chan_id.strip()
+    chan_id_or_pubkey,multi_value,comment = line.split(",")
+    chan_id_or_pubkey = chan_id_or_pubkey.strip()
     multi_value = multi_value.strip()
     comment = comment.strip()
     
-    multiplier_obj = MultiplierConfig(chan_id, multi_value, comment)
+    multiplier_obj = MultiplierConfig(chan_id_or_pubkey, multi_value, comment)
     
     return multiplier_obj
 
 def load_config():
     
     global multiplier_list
-    conf_file = open(conf_file_name, "r") 
+    
+    try:
+        conf_file = open(conf_file_name, "r") 
+    except:
+        print("WARNING! unable to load config file. it is not required, just did not load.")
+        return
     
     for conf_line in conf_file:
         if not conf_line.startswith("#"):
-            multiplier_obj = make_multiplier_config(conf_line)
-            multiplier_list.append(multiplier_obj)
+            if "," in conf_line:
+                multiplier_obj = make_multiplier_config(conf_line)
+                multiplier_list.append(multiplier_obj)
             
-    print("multiplier list")
+    print("--multiplier list - pubkey--")
     for multiplier_obj in multiplier_list:
-        print(multiplier_obj.chan_id, multiplier_obj.multi_value)
+        if(multiplier_obj.config_type == "pubkey"):
+            print(multiplier_obj.pubkey, multiplier_obj.multi_value, multiplier_obj.comment)
+    
+    print("--multiplier list - chan_id--")
+    for multiplier_obj in multiplier_list:
+        if(multiplier_obj.config_type == "chan_id"):
+            print(multiplier_obj.chan_id, multiplier_obj.multi_value, multiplier_obj.comment)
 
 
 def getFeeFromFeeJson(fee_response, channel_endpoint):   
@@ -156,6 +180,25 @@ def getMaxFee(is_i_created_channel, commit_fee):
         max_fee_to_use = max_fee
     return max_fee_to_use
 
+def getMultiplierForChannel(chan_id, remote_pubkey):
+    #default multiplier is 1
+    multiplier = 1    
+    
+    #try by pubkey first
+    for multiplier_obj in multiplier_list:
+        if(multiplier_obj.config_type == "pubkey"):
+            if(multiplier_obj.pubkey == remote_pubkey):
+                multiplier = multiplier_obj.multi_value
+    
+    #then by chan_id (more granular)
+    for multiplier_obj in multiplier_list:
+        if(multiplier_obj.config_type == "chan_id"):
+            if(multiplier_obj.chan_id == chan_id):
+                multiplier = multiplier_obj.multi_value
+
+    return multiplier
+
+
 def main(): 
 
     
@@ -196,10 +239,7 @@ def main():
 
         max_fee_to_use = getMaxFee(chan.initiator, chan.commit_fee)
 
-        multiplier = 1    
-        for multiplier_obj in multiplier_list:
-            if(multiplier_obj.chan_id == chan.chan_id):
-                multiplier = multiplier_obj.multi_value
+        multiplier = getMultiplierForChannel(chan.chan_id, chan.remote_pubkey)        
         
         #fee calc
         target_fee = calcFeeFromCapacity(local_balance_pct_100, max_fee_to_use, multiplier)
@@ -280,8 +320,8 @@ if(print_fee_range):
     
     #print headers
     print('')
-    print('capacity',' target fee rate')
-    print('--------',' ------------------------------------------------------------------------------------------------------------------------')
+    print('capacity%',' target fee rate')
+    print('---------',' ------------------------------------------------------------------------------------------------------------------------')
     print('   ', end="", flush=True)
     for commit_fee_multiplier in range(0,10):
         commit_fee_to_check = commit_fee_multiplier * fee_increments

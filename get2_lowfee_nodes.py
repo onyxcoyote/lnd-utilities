@@ -1,3 +1,4 @@
+#This gets a list of lowfee nodes and estimates the fees to send a payment to each node
  
 import rpc_pb2 as ln
 
@@ -169,7 +170,7 @@ def main():
                                                 
                             
                     
-                    print(pubkey, ":",'%5s' % count, '%6s' % route_fee, '%11s' % connectedText, '%35s' % node_alias.encode('ascii','ignore'), '%12s' % first_hop, '%2s' % hop_count)
+                    print(pubkey, ":",'%5s' % count, '%8s' % route_fee, '%11s' % connectedText, '%35s' % node_alias.encode('ascii','ignore'), '%12s' % first_hop, '%2s' % hop_count)
                     #print(response_nodeinfo)
 
 
