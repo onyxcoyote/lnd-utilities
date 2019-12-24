@@ -4,7 +4,6 @@ import rpc_pb2 as ln
 
 import lnrpc_helper
 
-
 #todo; include pending channels
 
 
@@ -51,10 +50,14 @@ def printOneChannel(chan,chantype):
     #get node alias
     request_nodeinfo = ln.NodeInfoRequest(
         pub_key=pubkey,
+        include_channels=False,
     )
-    response_nodeinfo = stub.GetNodeInfo(request_nodeinfo)
-    node_alias = response_nodeinfo.node.alias
-    
+    try:
+        response_nodeinfo = stub.GetNodeInfo(request_nodeinfo)
+        node_alias = response_nodeinfo.node.alias
+    except Exception as e:
+        #print(e)
+        node_alias = "[Error getting node info, possibly a new peer that does not exist in our peer list yet]"
     
     local_pct = round(100*channel.local_balance/channel.capacity,1)
               
