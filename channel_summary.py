@@ -3,7 +3,7 @@ import rpc_pb2 as ln
 #import rpc_pb2_grpc as lnrpc
 
 import lnrpc_helper
-
+import operator
 
 #todo; include pending channels
 
@@ -32,6 +32,13 @@ def printOneChannel(chan,chantype):
             my_commit_fee = chan.commit_fee
         else:
             my_commit_fee = 0
+            
+        tot_sat_received = channel.total_satoshis_received, 
+        tot_sat_sent = channel.total_satoshis_sent,
+          
+        total_trans = channel.total_satoshis_received + channel.total_satoshis_sent
+        trans_ratio = round(total_trans / channel.capacity,4)
+
     elif(chantype == 'pending'):
         pubkey = chan.channel.remote_node_pub
         channel = chan.channel
@@ -44,6 +51,12 @@ def printOneChannel(chan,chantype):
             my_commit_fee = chan.commit_fee 
         else:
             my_commit_fee = 0 
+            
+        tot_sat_received = 0, 
+        tot_sat_sent = 0,
+        
+        trans_ratio = 'pnd..'        
+        
     else:
         print('unknown chantype')
         print(chantype)
@@ -51,15 +64,31 @@ def printOneChannel(chan,chantype):
     #get node alias
     request_nodeinfo = ln.NodeInfoRequest(
         pub_key=pubkey,
+        include_channels=False,
     )
-    response_nodeinfo = stub.GetNodeInfo(request_nodeinfo)
-    node_alias = response_nodeinfo.node.alias
-    
+    try:
+        response_nodeinfo = stub.GetNodeInfo(request_nodeinfo)
+        node_alias = response_nodeinfo.node.alias
+    except Exception as e:
+        #print(e)
+        node_alias = "[Error getting node info, possibly a new peer that does not exist in our peer list yet]"
     
     local_pct = round(100*channel.local_balance/channel.capacity,1)
               
             
-    print('%35s' % node_alias.encode('ascii','replace'), '%18s' % chanid, pubkey, 'active: ', '%5s' % chanactive, 'remotebal:', '%8s' % channel.remote_balance, '%9s' % (my_commit_fee+channel.local_balance), '%7s' % my_commit_fee, 'localbal:', '%9s' % channel.local_balance, '/', '%9s' % channel.capacity, ' = ',  '%5s' % str(local_pct),'%')
+    print('%35s' % node_alias.encode('ascii','replace'), 
+          '%18s' % chanid, 
+          '%66s' % pubkey, 
+          '%5s' % chanactive, 
+          '%9s' % channel.remote_balance, 
+          '%9s' % (my_commit_fee+channel.local_balance), 
+          '%7s' % my_commit_fee, 
+          '%10s' % trans_ratio,
+          '%9s' % channel.local_balance, 
+          '/', 
+          '%9s' % channel.capacity, 
+          ' = ', 
+          '%5s' % str(local_pct),'%')
 
     all_channel_val += (my_commit_fee+channel.local_balance)
     all_channel_cap += channel.capacity
@@ -78,10 +107,24 @@ def main():
     
 
     if True:
-        print('%35s' % 'chan_alias', '%18s' % 'chan_id', '%66s' % 'chan.remote_pubkey', 'active: ', '    ', 'remote balance', 'bal+fee', 'commit fee', 'local balance:', '%9s' % 'local_balance', 'chan_capacity', '%9s' % 'capacity %')
+        print('%35s' % 'chan_alias', 
+              '%18s' % 'chan_id', 
+              '%66s' % 'chan.remote_pubkey', 
+              '%5s' % 'active', 
+              '%9s' % 'remotebal', 
+              '%9s' % 'bal+myfee', 
+              '%7s' % 'myfee', 
+              '%10s' % 'usagerat',
+              '%9s' % 'locbal', 
+              '%9s' % 'chancap', 
+              '%9s' % 'cap %')
+
+    response.channels.sort(key=operator.attrgetter('initiator'), reverse=True)
+        
     for chan in response.channels:
         printOneChannel(chan, 'active')
         
+
 
     request_pending = ln.PendingChannelsRequest()
     response_pending = stub.PendingChannels(request_pending)
