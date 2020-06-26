@@ -1,7 +1,12 @@
+from datetime import date
+from datetime import timedelta
+from datetime import datetime
+import time
+
 import rpc_pb2 as ln
 
 import lnrpc_helper
-from datetime import datetime
+
 
 stub = lnrpc_helper.get_lightning_stub()
 
@@ -15,16 +20,26 @@ request = ln.ListChannelsRequest(
 )
 response_channels = stub.ListChannels(request)
 
+def dateTimeToUnixTime(inDateTime):
+    unixTime = time.mktime(inDateTime.timetuple())
+    return unixTime
 
 def main():
-    
-    #todo: show last 1000 events, check if offset is > 1000, and use index_offset = numevents-1000
+
+    today = date.today()
+    threeMonthsAgo = today - timedelta(days=90)
+    tomorrow = today + timedelta(days=1)
+
+    #todo: adjust max number of events
     request = ln.ForwardingHistoryRequest(
-        start_time=1500000000,
-        end_time=1700000000,
+        start_time=int(dateTimeToUnixTime(threeMonthsAgo)),
+        end_time=int(dateTimeToUnixTime(tomorrow)),
+        #start_time=1570000000,
+        #end_time=1700000000,
         index_offset=0,
-        num_max_events=1000,
+        num_max_events=10000,
     )
+
     response_fwdinghistory = stub.ForwardingHistory(request)
     
     for event in response_fwdinghistory.forwarding_events:
