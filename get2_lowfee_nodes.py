@@ -8,15 +8,15 @@ import time
 
 #todo: identify pending channels
 
-
+queryAmountsat = 1000000
 minCapacitySat = 5000000
 maxFeeRateMilliMsat = 100
 maxFeeBaseMsat = 10*1000
 minChanCount = 4
 
 maxChanCountToCalcRoutes = 200
-minChanCountToCalcRoutes = 40
-maxRoutesToQuery = 10 #WARNING! this is very slow. use a low number or 0 if speed is important
+minChanCountToCalcRoutes = 20
+maxRoutesToQuery = 20 #WARNING! this is very slow. use a low number or 0 if speed is important. 
 
 pauseBetweenRouteQueriesSeconds = 3.00 #use a non-zero number to help avoid overuse of resources. 0 or a low number for faster speed.
 
@@ -128,7 +128,7 @@ def main():
                             #query route to node (might be computationally expensive)
                             request_route = ln.QueryRoutesRequest(
                                 pub_key=pubkey,
-                                amt=1000000,
+                                amt=queryAmountSat,
                             )
                             
                             if(routesQueried < maxRoutesToQuery):

@@ -26,6 +26,11 @@ def printOneChannel(chan,chantype):
         channel = chan
         chanid = chan.chan_id
         chanactive = chan.active
+        pendinghtlcs_count = len(chan.pending_htlcs)
+        if(chan.private):
+            pri = 'priv'
+        else:
+            pri = ''
         
         #if the other party opened the channel and is responsible for the commit fee, don't count it as part of my funds
         if(channel.initiator):
@@ -43,7 +48,9 @@ def printOneChannel(chan,chantype):
         pubkey = chan.channel.remote_node_pub
         channel = chan.channel
         chanid = 'PENDING'
-        chanactive = 'pnd..'    
+        chanactive = 'pnd..'   
+        pendinghtlcs = ' '
+        pri = 'pnd'
         
         #if the other party opened the channel and is responsible for the commit fee, don't count it as part of my funds
         #NOTE: there is no initiator field, we could miscalculate total balance if it's an incoming channel. instead using a workaround that only works with channels with 1 initiator (currently all channels)
@@ -80,6 +87,8 @@ def printOneChannel(chan,chantype):
           '%18s' % chanid, 
           '%66s' % pubkey, 
           '%5s' % chanactive, 
+          '%3s' % pendinghtlcs_count,
+          '%5s' % pri, 
           '%9s' % channel.remote_balance, 
           '%9s' % (my_commit_fee+channel.local_balance), 
           '%7s' % my_commit_fee, 
@@ -111,6 +120,8 @@ def main():
               '%18s' % 'chan_id', 
               '%66s' % 'chan.remote_pubkey', 
               '%5s' % 'active', 
+              '%3s' % 'htlcs', 
+              '%3s' % 'pri', 
               '%9s' % 'remotebal', 
               '%9s' % 'bal+myfee', 
               '%7s' % 'myfee', 
@@ -120,15 +131,20 @@ def main():
               '%9s' % 'cap %')
 
     response.channels.sort(key=operator.attrgetter('initiator'), reverse=True)
-        
+    
+    is_pending_htlcs=False
+    
     for chan in response.channels:
         printOneChannel(chan, 'active')
-        
-
+        if(len(chan.pending_htlcs) > 0):
+            is_pending_htlcs=True
+    
 
     request_pending = ln.PendingChannelsRequest()
     response_pending = stub.PendingChannels(request_pending)
     #print(response_pending)
+
+    
 
     for chan in response_pending.pending_open_channels:
         #print(chan)
@@ -137,10 +153,13 @@ def main():
     
     print('total_limbo_balance=',response_pending.total_limbo_balance)
         
+    msg = ''
+    if(is_pending_htlcs):
+        msg = 'note: balance may not reflect accurately if there are pending stuck HTLCs'
 
     tot_local_pct = round(100*all_channel_val/all_channel_cap,1)
     print('TOTAL (sat): ',all_channel_val,'/',all_channel_cap, '=', str(tot_local_pct),'%' )
-    print('TOTAL (BTC): ',all_channel_val/100000000,'BTC','/',all_channel_cap/100000000,'BTC')
+    print('TOTAL (BTC): ',all_channel_val/100000000,'BTC','/',all_channel_cap/100000000,'BTC ' + msg )
 
 
     #for chan in response:
@@ -151,13 +170,16 @@ main()
 
 
 
-    #LISTCHANNELS.channels
+    #LISTCHANNELS.channels  0.8.2-beta
     #channel properties
-    #['ByteSize', 'Clear', 'ClearExtension', 'ClearField', 'CopyFrom', 'DESCRIPTOR', 'DiscardUnknownFields', 'Extensions', 'FindInitializationErrors', 'FromString', 'HasExtension', 'HasField', 'IsInitialized', 'ListFields', 'MergeFrom', 'MergeFromString', 'ParseFromString', 'RegisterExtension', 'SerializePartialToString', 'SerializeToString', 'SetInParent', 'UnknownFields', 'WhichOneof', '_CheckCalledFromGeneratedFile', '_SetListener', '__class__', '__deepcopy__', '__delattr__', '__dir__', '__doc__', '__eq__', '__format__', '__ge__', '__getattribute__', '__getstate__', '__gt__', '__hash__', '__init__', '__init_subclass__', '__le__', '__lt__', '__module__', '__ne__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__setstate__', '__sizeof__', '__slots__', '__str__', '__subclasshook__', '__unicode__', '_extensions_by_name', '_extensions_by_number', 'active', 'capacity', 'chan_id', 'chan_status_flags', 'channel_point', 'commit_fee', 'commit_weight', 'csv_delay', 'fee_per_kw', 'initiator', 'local_balance', 'num_updates', 'pending_htlcs', 'private', 'remote_balance', 'remote_pubkey', 'total_satoshis_received', 'total_satoshis_sent', 'unsettled_balance']
+    #print(type(chan))
+    #<class 'rpc_pb2.Channel'>
+    #print(dir(chan))
+    #['ByteSize', 'Clear', 'ClearExtension', 'ClearField', 'CopyFrom', 'DESCRIPTOR', 'DiscardUnknownFields', 'Extensions', 'FindInitializationErrors', 'FromString', 'HasExtension', 'HasField', 'IsInitialized', 'ListFields', 'MergeFrom', 'MergeFromString', 'ParseFromString', 'RegisterExtension', 'SerializePartialToString', 'SerializeToString', 'SetInParent', 'UnknownFields', 'WhichOneof', '_CheckCalledFromGeneratedFile', '_SetListener', '__class__', '__deepcopy__', '__delattr__', '__dir__', '__doc__', '__eq__', '__format__', '__ge__', '__getattribute__', '__getstate__', '__gt__', '__hash__', '__init__', '__init_subclass__', '__le__', '__lt__', '__module__', '__ne__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__setstate__', '__sizeof__', '__slots__', '__str__', '__subclasshook__', '__unicode__', '_extensions_by_name', '_extensions_by_number', 'active', 'capacity', 'chan_id', 'chan_status_flags', 'channel_point', 'commit_fee', 'commit_weight', 'csv_delay', 'fee_per_kw', 'initiator', 'local_balance', 'local_chan_reserve_sat', 'num_updates', 'pending_htlcs', 'private', 'remote_balance', 'remote_chan_reserve_sat', 'remote_pubkey', 'total_satoshis_received', 'total_satoshis_sent', 'unsettled_balance']
 
 
-    #LISTCHANNELS
+    #LISTCHANNELS   0.8.2-beta
     #print(type(response))
-    #print(dir(response))
     #<class 'rpc_pb2.ListChannelsResponse'>
+    #print(dir(response))
     #['ByteSize', 'Clear', 'ClearExtension', 'ClearField', 'CopyFrom', 'DESCRIPTOR', 'DiscardUnknownFields', 'Extensions', 'FindInitializationErrors', 'FromString', 'HasExtension', 'HasField', 'IsInitialized', 'ListFields', 'MergeFrom', 'MergeFromString', 'ParseFromString', 'RegisterExtension', 'SerializePartialToString', 'SerializeToString', 'SetInParent', 'UnknownFields', 'WhichOneof', '_CheckCalledFromGeneratedFile', '_SetListener', '__class__', '__deepcopy__', '__delattr__', '__dir__', '__doc__', '__eq__', '__format__', '__ge__', '__getattribute__', '__getstate__', '__gt__', '__hash__', '__init__', '__init_subclass__', '__le__', '__lt__', '__module__', '__ne__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__setstate__', '__sizeof__', '__slots__', '__str__', '__subclasshook__', '__unicode__', '_extensions_by_name', '_extensions_by_number', 'channels']
