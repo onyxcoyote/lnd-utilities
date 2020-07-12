@@ -49,7 +49,7 @@ def printOneChannel(chan,chantype):
         channel = chan.channel
         chanid = 'PENDING'
         chanactive = 'pnd..'   
-        pendinghtlcs = ' '
+        pendinghtlcs_count = 0
         pri = 'pnd'
         
         #if the other party opened the channel and is responsible for the commit fee, don't count it as part of my funds
