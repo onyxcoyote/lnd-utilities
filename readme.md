@@ -10,8 +10,8 @@ prerequisites
     put rpc_pb2.py in a python library path and update PYTHONPATH, e.g.
         export PYTHONPATH=${PYTHONPATH}:/srv/lib/python
         
-    2) also needs a bunch of additional stuff installed
-          TODO: add more details
+    2) requires python libraries: 
+	protobuf, grpcio, grpcio-tools          
     
 
 
