@@ -115,7 +115,7 @@ def load_config():
 
 def getFeeFromFeeJson(fee_response, channel_endpoint):   
     for channel_fees in fee_response.channel_fees:
-        if(channel_endpoint == channel_fees.chan_point): 
+        if(channel_endpoint == channel_fees.channel_point): #LND >= 0.11.0 channel_point, < 0.11.0 chan_point
             return channel_fees.fee_rate
 
 def getCurrentNodePubKey():
