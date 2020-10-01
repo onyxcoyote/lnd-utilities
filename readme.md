@@ -20,7 +20,7 @@ channel_summary.py
     * purpose:
         * display some information about connected channels. Can also be used to see total node capacity.
     * requires:
-        * LND
+        * LND  v0.11.0+  (at least for adjust_channel_fees, other scripts will work on earlier versions)
         * python3
     * run with:
 ```
