@@ -156,6 +156,12 @@ def calcFeeFromCapacity(local_balance_pct_100, max_fee_to_use, multiplier):
     if(target_fee > max_fee_to_use):
         target_fee = max_fee_to_use
         
+    #if the fee is higher than X amount, round to nearest value to reduce frequent updates due to small changes in factors used to calculate it.
+    if(target_fee > 0.001000):
+        target_fee = round(target_fee, 4)
+    elif(target_fee > 0.000100):
+        target_fee = round(target_fee, 5)
+
     return target_fee
 
 def getMaxFee(is_i_created_channel, commit_fee):
