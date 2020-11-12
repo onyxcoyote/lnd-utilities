@@ -239,7 +239,12 @@ def main():
             if(not chan.initiator):
                 continue #don't set fee on a channel someone else opened, unless configured to do so
         
-        local_balance_pct = (chan.local_balance/chan.capacity)
+        #take commit_fee into account to avoid balance percent variations based on fee levels.  if local initiated, add to local balance, if not, ignore commit_fee.
+        if(chan.initiator):
+            local_balance_pct = ((chan.local_balance+chan.commit_fee)/chan.capacity)
+        else:
+            local_balance_pct = (chan.local_balance/chan.capacity)
+
         local_balance_pct_100 = math.floor(local_balance_pct*100)
 
 
